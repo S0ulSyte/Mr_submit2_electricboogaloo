@@ -1,7 +1,7 @@
 // @bun
 var __require = import.meta.require;
 
-// bot/main-wall5.ts
+// bot/main-wall7.ts
 import { readFileSync } from "fs";
 import { join } from "path";
 
@@ -891,6 +891,11 @@ var SPACE = {
   wallUpCenW: { def: 1, min: 0, max: 3, step: 0.1, desc: "Wall upgrade: penalty for distance from the next zone's centre, as a share of its radius" },
   wallUpDistW: { def: 0.3, min: 0, max: 3, step: 0.1, desc: "Wall upgrade: penalty per 100 m to walk to the new spot" },
   wallUpMargin: { def: 0.1, min: 0, max: 1, step: 0.05, desc: "Wall upgrade: how much better a spot must be to move" },
+  wallHeal: { def: 0, min: 0, max: 1, step: 1, int: true, desc: "Wall bot: when hurt and out of sight (no mech seen in wallSeenS s), walk spot by spot to the nearest wall-end spot hidden from every known or remembered mech and farther from the nearest one, until HP is back above wallHealHp" },
+  wallHealHp: { def: 0.8, min: 0.3, max: 1, step: 0.05, desc: "Wall heal: keep withdrawing until HP is above this share" },
+  wallHealMem: { def: 60, min: 5, max: 200, step: 5, desc: "Wall heal: remember a mech for this long (s)" },
+  wallHealR: { def: 100, min: 20, max: 250, step: 10, desc: "Wall heal: only spots this close (m)" },
+  wallSquad: { def: 0, min: 0, max: 1, step: 1, int: true, desc: "Wall bot with detect: once a house squad is seen (not a free-for-all), stop the wall play: walk the next circle's edge like the roamer, fight by the normal rules, take cubes, never shoot or walk to crates" },
   wallReplanS: { def: 3, min: 0.5, max: 20, step: 0.5, desc: "Wall bot: pick the spot again this often (s)" },
   spawnEsc: { def: 0, min: 0, max: 1, step: 1, int: true, desc: "1 = spawned on a red heat-map spot (heat < spawnRed): walk/jet along the route graph to the nearest spot with heat >= spawnBlue, then play as normal (fights and retreats still come first)" },
   spawnRed: { def: 0, min: -1, max: 1, step: 0.05, desc: "With spawnEsc: a spawn spot below this heat (-1..1 scale) counts as red" },
@@ -1569,7 +1574,7 @@ function makeBot(hello, world, params, opts) {
   const roam = Q.roam >= 0.5;
   if (Q.rtRoute >= 0.5)
     routes();
-  if (Q.wallBot >= 0.5) {
+  if (Q.wallBot >= 0.5 || Q.wallSquad >= 0.5) {
     walls();
     heatMap();
   }
@@ -1589,8 +1594,9 @@ function makeBot(hello, world, params, opts) {
   let scanStart = 0, scanUntil = Q.openScan, scanYaw0 = NaN, nextScanT = 12;
   let lastDX = 0, lastDY = 0;
   let wanderGoal = null;
-  let wallFinalNow = false;
+  let wallFinalNow = false, lastSquadMode = false;
   let wallRet = -1, wallRetT0 = -99;
+  let wallHealGoal = -1, wallHealT = -99;
   let wallUpGoal = false;
   let wallGoal = -1, wallT = -99;
   let roamDir = 1;
@@ -1909,6 +1915,12 @@ function makeBot(hello, world, params, opts) {
           }
         }
       }
+      const squadMode = Q.wallSquad >= 0.5 && gameSquad && !ffa;
+      const wallOn = Q.wallBot >= 0.5 && !squadMode;
+      if (DBG && squadMode !== lastSquadMode) {
+        DBG(`squad mode ${squadMode ? "on" : "off"} at t=${t.toFixed(1)}`);
+        lastSquadMode = squadMode;
+      }
       if (alertUntil < t)
         for (const s of obs.sounds) {
           if (s.dist === "near" && s.kind !== "explosion" && s.kind !== "death" && s.kind !== "crate" && s.kind !== "drop" && s.kind !== "npc_gun") {
@@ -2087,7 +2099,7 @@ function makeBot(hello, world, params, opts) {
       }
       if (roam)
         fight = !hide && !!tk0 && (finishable || tk0.hp < Q.roamLowHp * tk0.maxHp || Q.roamHurt >= 0.5 && hurtByMech && tk0.id === lastHurtBy);
-      if (Q.wallBot >= 0.5) {
+      if (wallOn) {
         fight = false;
         let known = 0;
         for (const k of tracks.values())
@@ -2145,7 +2157,7 @@ function makeBot(hello, world, params, opts) {
           else if (calm)
             consider(a, Q.npcR, 0);
         }
-        if (calm && Q.wallNoLoot < 0.5)
+        if (calm && Q.wallNoLoot < 0.5 && !squadMode)
           for (const it of obs.crates)
             consider({ id: it.id, kind: "crate", x: it.pos[0], y: it.pos[1], z: it.pos[2], vx: 0, vy: 0, vz: 0, r: cfg.crates?.radius ?? 1.4, h: cfg.crates?.height ?? 2.4, hp: it.hp ?? 300, maxHp: 300, weapons: [], frac: 0.5 }, Q.crateR, 60);
       }
@@ -2927,7 +2939,7 @@ function makeBot(hello, world, params, opts) {
         }
         if (bw && chase(bw.id, d2(x, y, bw.x, bw.y), 9))
           return go(bw.x, bw.y, 1.2, "get-" + bw.kind);
-        if (quiet && (hpF >= Q.farmHp || roam) && !evade && Q.wallNoLoot < 0.5) {
+        if (quiet && (hpF >= Q.farmHp || roam) && !evade && Q.wallNoLoot < 0.5 && !squadMode) {
           let cr = null, cd = roam ? Math.max(Q.crateWalk, Q.roamCrateR) : Q.crateWalk;
           for (const it of crateMem.values()) {
             if (it.roof || !okSpot(it.x, it.y) || skip(it.id))
@@ -2959,7 +2971,7 @@ function makeBot(hello, world, params, opts) {
           if (recent && d2(x, y, recent.x, recent.y) > 40)
             return go(recent.x, recent.y, 30, "seek");
         }
-        if (Q.wallBot >= 0.5) {
+        if (wallOn) {
           if (wallFinalNow) {
             let recent = null;
             for (const k of tracks.values())
@@ -2969,6 +2981,66 @@ function makeBot(hello, world, params, opts) {
               return go(recent.x, recent.y, 4, "wall-hunt", d2(x, y, recent.x, recent.y) > 40 && me.energy > 40);
             return go(ncx, ncy, 4, "wall-hunt-centre");
           }
+          if (Q.wallHeal >= 0.5 && hpF < Q.wallHealHp) {
+            const WH = walls();
+            const foes = [];
+            for (const k of tracks.values())
+              if (!k.npc && t - k.seen <= Q.wallHealMem)
+                foes.push({ x: k.x, y: k.y, ez: k.z + k.h * 0.89 });
+            if (WH && foes.length) {
+              const zs = zoneAt(t + 6);
+              const near = (px, py) => {
+                let m = Infinity;
+                for (const f of foes)
+                  m = Math.min(m, d2(px, py, f.x, f.y));
+                return m;
+              };
+              const here = wallHealGoal >= 0 && d2(x, y, WH.x[wallHealGoal], WH.y[wallHealGoal]) <= 2.5;
+              if (wallHealGoal < 0 || here || t - wallHealT > 3) {
+                const myNear = near(x, y);
+                const hidAll = (k) => {
+                  for (const f of foes)
+                    if (los(f.x, f.y, f.ez, WH.x[k], WH.y[k], WH.z[k] + height * 0.5) || los(f.x, f.y, f.ez, WH.x[k], WH.y[k], WH.z[k] + height - 0.5))
+                      return false;
+                  return true;
+                };
+                const cand = [];
+                for (let k = 0;k < WH.n; k++) {
+                  const d = d2(x, y, WH.x[k], WH.y[k]);
+                  if (d < 4 || d > Q.wallHealR || d2(WH.x[k], WH.y[k], zs[0], zs[1]) > zs[2] - 5 || skip(-3000 - k))
+                    continue;
+                  if (near(WH.x[k], WH.y[k]) <= myNear + 5)
+                    continue;
+                  cand.push([d, k]);
+                }
+                cand.sort((a, b) => a[0] - b[0]);
+                let pick = -1, checks = 0;
+                for (const [, k] of cand) {
+                  if (checks++ >= 24)
+                    break;
+                  if (hidAll(k)) {
+                    pick = k;
+                    break;
+                  }
+                }
+                if (pick >= 0 && pick !== wallHealGoal)
+                  chase(-3000 - pick, d2(x, y, WH.x[pick], WH.y[pick]), 99);
+                if (pick >= 0 || !here) {
+                  wallHealGoal = pick;
+                  wallHealT = t;
+                }
+              }
+              if (wallHealGoal >= 0) {
+                const k = wallHealGoal, d = d2(x, y, WH.x[k], WH.y[k]);
+                if (d > 2.5 && !chase(-3000 - k, d, 12)) {
+                  ignore.set(-3000 - k, t + 20);
+                  wallHealGoal = -1;
+                } else
+                  return go(WH.x[k], WH.y[k], 1.2, d > 2.5 ? "wall-heal" : "wall-heal-hold");
+              }
+            }
+          } else
+            wallHealGoal = -1;
           const WL = walls();
           if (WL) {
             const zs = late ? [ncx, ncy, nr] : zoneAt(t + 6);
@@ -3017,7 +3089,7 @@ function makeBot(hello, world, params, opts) {
             }
           }
         }
-        if (roam && nr >= 60) {
+        if ((roam || squadMode) && nr >= 60) {
           const R = nr - Q.roamEdge;
           const bad = !wanderGoal || d2(wanderGoal[0], wanderGoal[1], x, y) < 15 || Math.abs(d2(wanderGoal[0], wanderGoal[1], ncx, ncy) - R) > 20;
           if (bad) {
@@ -3389,7 +3461,7 @@ function makeBot(hello, world, params, opts) {
       const mechT = !!T && T.kind === "mech";
       const repairing = mechT && evade && hpF < Q.repHp && (Q.evadeShoot >= 0.5 ? !targetLos : t - lastHurtT > Q.repHurtS) && T.hp > Q.repFinish * T.maxHp && targetDist > Q.repDist;
       const unprovoked = !roam && mechT && (careful || !mayStart) && !fight && !hide && t - lastMechHurtT > Q.unprovS && T.hp > Q.unprovHp * T.maxHp;
-      const holdFire = !(Q.wallBot >= 0.5 && mechT) && (repairing || unprovoked || Q.peaceS > 0 && t < Q.peaceS && !(Q.peaceFire >= 0.5 && mechT && t - lastMechHurtT < Q.peaceFireS));
+      const holdFire = !(wallOn && mechT) && (repairing || unprovoked || Q.peaceS > 0 && t < Q.peaceS && !(Q.peaceFire >= 0.5 && mechT && t - lastMechHurtT < Q.peaceFireS));
       if (t >= nextScanT && nT === 0 && !mechT) {
         scanStart = t;
         scanUntil = t + Q.scanLen;
@@ -3558,21 +3630,23 @@ function makeBot(hello, world, params, opts) {
     }
   };
 }
-// bot/params-wall5.json
-var params_wall5_default = {
+// bot/params-wall7.json
+var params_wall7_default = {
   wallBot: 1,
   rtRoute: 1,
   crateCube: 1,
   unstickNet: 1,
-  wallUpgrade: 1
+  wallUpgrade: 1,
+  detect: 1,
+  wallSquad: 1
 };
 
-// bot/main-wall5.ts
+// bot/main-wall7.ts
 globalThis.__MECH_FILES = FILES;
 run((hello) => {
   const files = hello.map.files;
   const wj = files.find((f) => f.endsWith("world.json")) ?? "v2/world.json";
   const tf = files.find((f) => f.endsWith(".i16")) ?? "v2/terrain.i16";
   const world = new World(JSON.parse(readFileSync(join(hello.map.dir, wj), "utf8")), new Uint8Array(readFileSync(join(hello.map.dir, tf))));
-  return makeBot(hello, world, params_wall5_default, { deadlineMs: 12, warm: true });
+  return makeBot(hello, world, params_wall7_default, { deadlineMs: 12, warm: true });
 });
