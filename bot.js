@@ -1,7 +1,7 @@
 // @bun
 var __require = import.meta.require;
 
-// bot/main-wall7.ts
+// bot/main-wall9.ts
 import { readFileSync } from "fs";
 import { join } from "path";
 
@@ -664,8 +664,231 @@ var FILES = {
  "note": "made by train/walls/build.ts"
 }`
 };
+// bot/open-areas.json
+var open_areas_default = {
+  note: "spawn areas (k-means of wall-bot spawns, train/spawns/deaths.ts); bad = first-4 death rate z >= 2 over the base 0.168; dir = opening direction (0 = +x, 45 deg steps counter-clockwise, -1 = none); dirs from train/spawns/open.ts (stopped early: 6 seeds, 1-4 samples per area and direction; best paired gain >= +1.5 places, else none)",
+  areas: [
+    {
+      x: 273.9,
+      y: -236.1,
+      n: 106,
+      early: 0.236,
+      z: 1.9,
+      bad: false,
+      dir: -1
+    },
+    {
+      x: -259.2,
+      y: -102.9,
+      n: 79,
+      early: 0.62,
+      z: 10.8,
+      bad: true,
+      dir: 5
+    },
+    {
+      x: 19.9,
+      y: 182.9,
+      n: 74,
+      early: 0.162,
+      z: -0.1,
+      bad: false,
+      dir: -1
+    },
+    {
+      x: 318.3,
+      y: -69.4,
+      n: 91,
+      early: 0.308,
+      z: 3.6,
+      bad: true,
+      dir: 1
+    },
+    {
+      x: 246.2,
+      y: 110.4,
+      n: 130,
+      early: 0.069,
+      z: -3,
+      bad: false,
+      dir: -1
+    },
+    {
+      x: -279.9,
+      y: 156.4,
+      n: 159,
+      early: 0.107,
+      z: -2.1,
+      bad: false,
+      dir: -1
+    },
+    {
+      x: -54.1,
+      y: -215.8,
+      n: 124,
+      early: 0.056,
+      z: -3.3,
+      bad: false,
+      dir: -1
+    },
+    {
+      x: 44.6,
+      y: -107.1,
+      n: 110,
+      early: 0.1,
+      z: -1.9,
+      bad: false,
+      dir: -1
+    },
+    {
+      x: -148.4,
+      y: 294.1,
+      n: 118,
+      early: 0.093,
+      z: -2.2,
+      bad: false,
+      dir: -1
+    },
+    {
+      x: 418.5,
+      y: 48.9,
+      n: 78,
+      early: 0.115,
+      z: -1.2,
+      bad: false,
+      dir: -1
+    },
+    {
+      x: -121.1,
+      y: -5.8,
+      n: 120,
+      early: 0.25,
+      z: 2.4,
+      bad: true,
+      dir: 2
+    },
+    {
+      x: 137.2,
+      y: -242.9,
+      n: 99,
+      early: 0.131,
+      z: -1,
+      bad: false,
+      dir: -1
+    },
+    {
+      x: -347.8,
+      y: -5.6,
+      n: 121,
+      early: 0.248,
+      z: 2.4,
+      bad: true,
+      dir: -1
+    },
+    {
+      x: 254.3,
+      y: 254.2,
+      n: 118,
+      early: 0.11,
+      z: -1.7,
+      bad: false,
+      dir: -1
+    },
+    {
+      x: -198.1,
+      y: -254.7,
+      n: 104,
+      early: 0.279,
+      z: 3,
+      bad: true,
+      dir: -1
+    },
+    {
+      x: 71.2,
+      y: 291.9,
+      n: 114,
+      early: 0.044,
+      z: -3.5,
+      bad: false,
+      dir: -1
+    },
+    {
+      x: 444.7,
+      y: -84.9,
+      n: 99,
+      early: 0.172,
+      z: 0.1,
+      bad: false,
+      dir: -1
+    },
+    {
+      x: 402.5,
+      y: -236.1,
+      n: 115,
+      early: 0.087,
+      z: -2.3,
+      bad: false,
+      dir: -1
+    },
+    {
+      x: -371.9,
+      y: -138.6,
+      n: 103,
+      early: 0.291,
+      z: 3.4,
+      bad: true,
+      dir: 3
+    },
+    {
+      x: 200.5,
+      y: -80.4,
+      n: 115,
+      early: 0.235,
+      z: 1.9,
+      bad: false,
+      dir: -1
+    },
+    {
+      x: 380.2,
+      y: 151.3,
+      n: 92,
+      early: 0.054,
+      z: -2.9,
+      bad: false,
+      dir: -1
+    },
+    {
+      x: -318.9,
+      y: -252.9,
+      n: 114,
+      early: 0.193,
+      z: 0.7,
+      bad: false,
+      dir: -1
+    },
+    {
+      x: -131.6,
+      y: 140.5,
+      n: 88,
+      early: 0.17,
+      z: 0.1,
+      bad: false,
+      dir: -1
+    },
+    {
+      x: 83.5,
+      y: 53.9,
+      n: 129,
+      early: 0.093,
+      z: -2.3,
+      bad: false,
+      dir: -1
+    }
+  ]
+};
 
 // bot/provenw.ts
+var OPEN_AREAS = open_areas_default.areas;
 var SPACE = {
   zoneLead: { def: 5, min: 1, max: 20, step: 1, desc: "Leave for the next circle when the zone edge reaches us within this many seconds (plus zoneWalkK x the walk time into the next circle)" },
   zoneWalkK: { def: 0.35, min: 0, max: 1.5, step: 0.1, desc: "Fraction of the walking time into the next circle added to zoneLead" },
@@ -896,6 +1119,10 @@ var SPACE = {
   wallHealMem: { def: 60, min: 5, max: 200, step: 5, desc: "Wall heal: remember a mech for this long (s)" },
   wallHealR: { def: 100, min: 20, max: 250, step: 10, desc: "Wall heal: only spots this close (m)" },
   wallSquad: { def: 0, min: 0, max: 1, step: 1, int: true, desc: "Wall bot with detect: once a house squad is seen (not a free-for-all), stop the wall play: walk the next circle's edge like the roamer, fight by the normal rules, take cubes, never shoot or walk to crates" },
+  openDir: { def: -1, min: -1, max: 7, step: 1, int: true, desc: "Wall bot opening (test): spawned in a bad area of bot/open-areas.json: first go to the nearest wall spot within openR m whose bearing is this direction (0 = +x, 45-degree steps counter-clockwise), then play as normal; -1 = off" },
+  openMap: { def: 0, min: 0, max: 1, step: 1, int: true, desc: "Wall bot opening: use each bad area's own direction from bot/open-areas.json (dir; -1 = none)" },
+  openR: { def: 150, min: 20, max: 400, step: 10, desc: "Wall bot opening: only spots this close (m)" },
+  wallSquadDef: { def: 0, min: 0, max: 1, step: 1, int: true, desc: "With wallSquad: start in the house-squad (practice) play and switch to the wall play only once the detector says free-for-all" },
   wallReplanS: { def: 3, min: 0.5, max: 20, step: 0.5, desc: "Wall bot: pick the spot again this often (s)" },
   spawnEsc: { def: 0, min: 0, max: 1, step: 1, int: true, desc: "1 = spawned on a red heat-map spot (heat < spawnRed): walk/jet along the route graph to the nearest spot with heat >= spawnBlue, then play as normal (fights and retreats still come first)" },
   spawnRed: { def: 0, min: -1, max: 1, step: 0.05, desc: "With spawnEsc: a spawn spot below this heat (-1..1 scale) counts as red" },
@@ -1598,6 +1825,7 @@ function makeBot(hello, world, params, opts) {
   let wallRet = -1, wallRetT0 = -99;
   let wallHealGoal = -1, wallHealT = -99;
   let wallUpGoal = false;
+  let openState = Q.openDir >= 0 || Q.openMap >= 0.5 ? -1 : 0, spawnX = NaN, spawnY = NaN;
   let wallGoal = -1, wallT = -99;
   let roamDir = 1;
   let chaseId = -1, chaseBest = Infinity, chaseT = 0;
@@ -1754,6 +1982,10 @@ function makeBot(hello, world, params, opts) {
         tick0 = performance.now();
       const { self: me, t } = obs;
       const x = me.pos[0], y = me.pos[1], z = me.pos[2];
+      if (Number.isNaN(spawnX)) {
+        spawnX = x;
+        spawnY = y;
+      }
       const S = me.stats;
       const radius = S.radius ?? baseR, height = S.height ?? baseH;
       myR = radius;
@@ -1915,7 +2147,7 @@ function makeBot(hello, world, params, opts) {
           }
         }
       }
-      const squadMode = Q.wallSquad >= 0.5 && gameSquad && !ffa;
+      const squadMode = Q.wallSquad >= 0.5 && (Q.wallSquadDef >= 0.5 || gameSquad) && !ffa;
       const wallOn = Q.wallBot >= 0.5 && !squadMode;
       if (DBG && squadMode !== lastSquadMode) {
         DBG(`squad mode ${squadMode ? "on" : "off"} at t=${t.toFixed(1)}`);
@@ -3045,6 +3277,41 @@ function makeBot(hello, world, params, opts) {
           if (WL) {
             const zs = late ? [ncx, ncy, nr] : zoneAt(t + 6);
             const inside = (k) => d2(WL.x[k], WL.y[k], zs[0], zs[1]) < zs[2] - 5;
+            if (openState === -1) {
+              openState = 0;
+              let ai = -1, ad = Infinity;
+              OPEN_AREAS.forEach((A, i) => {
+                const dd = d2(spawnX, spawnY, A.x, A.y);
+                if (dd < ad) {
+                  ad = dd;
+                  ai = i;
+                }
+              });
+              const A = OPEN_AREAS[ai], dir = Q.openMap >= 0.5 ? A.dir : Q.openDir;
+              if (A.bad && dir >= 0 && t < 20) {
+                const ang = dir * Math.PI / 4;
+                let pick = -1, pd = Infinity;
+                for (let k = 0;k < WL.n; k++) {
+                  const dx = WL.x[k] - spawnX, dy = WL.y[k] - spawnY, dd = Math.hypot(dx, dy);
+                  if (dd < 4 || dd > Q.openR || dd >= pd || !inside(k))
+                    continue;
+                  let da = Math.abs(Math.atan2(dy, dx) - ang) % (2 * Math.PI);
+                  if (da > Math.PI)
+                    da = 2 * Math.PI - da;
+                  if (da <= Math.PI / 8) {
+                    pick = k;
+                    pd = dd;
+                  }
+                }
+                if (pick >= 0) {
+                  wallGoal = pick;
+                  wallT = t;
+                  wallUpGoal = true;
+                }
+                if (DBG)
+                  DBG(`opening: area ${ai} dir ${dir} -> spot ${pick} (${pd.toFixed(0)} m)`);
+              }
+            }
             const atSpot = wallGoal >= 0 && d2(x, y, WL.x[wallGoal], WL.y[wallGoal]) <= 2.5;
             if (Q.wallUpgrade >= 0.5 && atSpot && t - wallT > Q.wallReplanS && inside(wallGoal)) {
               const R = Math.max(nr, 50);
@@ -3630,23 +3897,24 @@ function makeBot(hello, world, params, opts) {
     }
   };
 }
-// bot/params-wall7.json
-var params_wall7_default = {
+// bot/params-wall9.json
+var params_wall9_default = {
   wallBot: 1,
   rtRoute: 1,
   crateCube: 1,
   unstickNet: 1,
   wallUpgrade: 1,
   detect: 1,
-  wallSquad: 1
+  wallSquad: 1,
+  wallSquadDef: 1
 };
 
-// bot/main-wall7.ts
+// bot/main-wall9.ts
 globalThis.__MECH_FILES = FILES;
 run((hello) => {
   const files = hello.map.files;
   const wj = files.find((f) => f.endsWith("world.json")) ?? "v2/world.json";
   const tf = files.find((f) => f.endsWith(".i16")) ?? "v2/terrain.i16";
   const world = new World(JSON.parse(readFileSync(join(hello.map.dir, wj), "utf8")), new Uint8Array(readFileSync(join(hello.map.dir, tf))));
-  return makeBot(hello, world, params_wall7_default, { deadlineMs: 12, warm: true });
+  return makeBot(hello, world, params_wall9_default, { deadlineMs: 12, warm: true });
 });
